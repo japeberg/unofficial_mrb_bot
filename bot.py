@@ -32,7 +32,7 @@ def get_urgent_messages():
             text = str(message[1])
             reason = str(message[2])
             alternatives = str(message[3])
-            message_to_send = title + "  " + url + "\n" + text + "" + reason + "" + alternatives
+            message_to_send = title + "  " + "\n" + url + " - "+ text + reason + alternatives + "\n"
             if message_to_send not in sent_messages:
                 unsent_messages.append(message_to_send)
                 sent_messages.append(message_to_send)
