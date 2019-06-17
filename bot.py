@@ -4,10 +4,9 @@ from lxml import html
 import requests
 import pickle
 import telegram
-from telegram.ext import Updater
+from telegram.ext import Updater, MessageHandler, Filters, CommandHandler
 import logging
 import config
-from telegram.ext import CommandHandler
 
 
 def get_urgent_messages():
@@ -32,7 +31,7 @@ def get_urgent_messages():
             text = str(message[1])
             reason = str(message[2])
             alternatives = str(message[3])
-            message_to_send = title + "  " + "\n" + url + " - "+ text + reason + alternatives + "\n"
+            message_to_send = title + "  " + "\n" + url + " - " + text + reason + alternatives + "\n"
             if message_to_send not in sent_messages:
                 unsent_messages.append(message_to_send)
                 sent_messages.append(message_to_send)
@@ -41,26 +40,36 @@ def get_urgent_messages():
 
 
 def callback_minute(context: telegram.ext.CallbackContext):
-    for chat_id in chat_ids:
-        message_to_send = "\n".join(get_urgent_messages())
-        context.bot.send_message(chat_id=chat_id, text=message_to_send)
+    urgent_messages = get_urgent_messages()
+    if len(urgent_messages) != 0:
+        for chat_id in chat_ids:
+            message_to_send = "\n".join(urgent_messages)
+            context.bot.send_message(chat_id=chat_id, text=message_to_send)
 
 
 def start(update, context):
     context.bot.send_message(chat_id=update.message.chat_id,
-                             text="Sie haben jetzt die Akutmeldungen der Mitteldeutschen Regiobahn abonniert")
+                             text="Sie haben jetzt die Akutmeldungen der Mitteldeutschen Regiobahn abonniert.")
     context.bot.send_message(chat_id=update.message.chat_id,
-                             text="Sie können das Abonnement jederzeit mit /stop beenden")
+                             text="Sie können das Abonnement jederzeit mit /stop beenden.")
     chat_ids.append(update.message.chat_id)
     pickle.dump(chat_ids, open(config.CHAT_IDS_PICKLE_FILEPATH, "wb"))
 
 
 def stop(update, context):
     context.bot.send_message(chat_id=update.message.chat_id,
-                             text="Sie haben alle Meldungen deabonniert")
+                             text="Sie haben alle Meldungen deabonniert.")
     chat_ids.remove(update.message.chat_id)
     pickle.dump(chat_ids, open(config.CHAT_IDS_PICKLE_FILEPATH, "wb"))
 
+
+def unknown_command(update, context):
+    context.bot.send_message(chat_id=update.message.chat_id, text="Ich kenne diesen Befehl nicht. Sie können den Dienst mit /start starten und mit /stop beenden.")
+
+
+def unknown_rest(update, context):
+    context.bot.send_message(chat_id=update.message.chat_id, text="Ich kann diese Nachricht nicht verstehen. Sie können den Dienst mit /start starten und mit /stop beenden.")
+    logging.info('"' + update.message.text + '" (' + str(update.message.chat_id) + ')')
 
 logging.basicConfig(filename=config.LOGS_FILEPATH, level=logging.INFO,
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -85,6 +94,15 @@ dispatcher.add_handler(start_handler)
 stop_handler = CommandHandler('stop', stop)
 dispatcher.add_handler(stop_handler)
 
+
+
+unknown_command_handler = MessageHandler(Filters.command, unknown_command)
+dispatcher.add_handler(unknown_command_handler)
+
+unknown_rest_handler = MessageHandler(Filters.all, unknown_rest)
+dispatcher.add_handler(unknown_rest_handler)
+
 j = updater.job_queue
 job_minute = j.run_repeating(callback_minute, interval=60, first=0)
+
 updater.start_polling()
