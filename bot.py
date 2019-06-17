@@ -48,7 +48,9 @@ def callback_minute(context: telegram.ext.CallbackContext):
 
 def start(update, context):
     context.bot.send_message(chat_id=update.message.chat_id,
-                             text="Sie haben jetzt die Meldungen für die MRB-Linie RE6 abonniert")
+                             text="Sie haben jetzt die Akutmeldungen der Mitteldeutschen Regiobahn abonniert")
+    context.bot.send_message(chat_id=update.message.chat_id,
+                             text="Sie können das Abonnement jederzeit mit /stop beenden")
     chat_ids.append(update.message.chat_id)
     pickle.dump(chat_ids, open(config.CHAT_IDS_PICKLE_FILEPATH, "wb"))
 
