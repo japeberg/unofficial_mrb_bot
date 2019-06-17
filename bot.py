@@ -84,5 +84,5 @@ stop_handler = CommandHandler('stop', stop)
 dispatcher.add_handler(stop_handler)
 
 j = updater.job_queue
-job_minute = j.run_repeating(callback_minute, interval=5, first=0)
+job_minute = j.run_repeating(callback_minute, interval=60, first=0)
 updater.start_polling()
