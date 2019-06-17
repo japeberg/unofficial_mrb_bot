@@ -1,4 +1,6 @@
-# config_default.py
+# config.py
 
 TELEGRAM_BOT_TOKEN = 'xxx'
-TELEGRAM_CHAT_ID = 1234
+MESSAGES_PICKLE_FILEPATH = 'messages.pickle'
+CHAT_IDS_PICKLE_FILEPATH = 'chat_ids.pickle'
+LOGS_FILEPATH = 'mrb_bot.log'
