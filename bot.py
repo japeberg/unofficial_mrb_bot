@@ -70,7 +70,7 @@ def unknown_command(update, context):
 
 def unknown_rest(update, context):
     context.bot.send_message(chat_id=update.message.chat_id, text="Ich kann diese Nachricht nicht verstehen. Sie können den Dienst mit /start starten und mit /stop beenden.")
-    logging.info('"' + update.message.text + '" (' + str(update.message.chat_id) + ')')
+    logging.info(' UNKNOWN COMMAND FROM USER: "' + update.message.text + '"')
 
 logging.basicConfig(filename=config.LOGS_FILEPATH, level=logging.INFO,
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
