@@ -29,8 +29,14 @@ def get_urgent_messages():
             message = urgent_messages[idx].xpath('p/text()')
             title = str(message[0])
             text = str(message[1])
-            reason = str(message[2])
-            alternatives = str(message[3])
+            try:
+                reason = str(message[2])
+            except IndexError:
+                reason = ""
+            try:
+                alternatives = str(message[3])
+            except IndexError:
+                alternatives = ""
             message_to_send = title + "  " + "\n" + url + " - " + text + reason + alternatives + "\n"
             if message_to_send not in sent_messages:
                 unsent_messages.append(message_to_send)
