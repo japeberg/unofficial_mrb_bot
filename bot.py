@@ -57,19 +57,31 @@ def callback_minute(context: telegram.ext.CallbackContext):
 
 
 def start(update, context):
-    context.bot.send_message(chat_id=update.message.chat_id,
-                             text="Sie haben jetzt die Akutmeldungen der Mitteldeutschen Regiobahn abonniert.")
-    context.bot.send_message(chat_id=update.message.chat_id,
-                             text="Sie können das Abonnement jederzeit mit /stop beenden.")
-    chat_ids.append(update.message.chat_id)
-    logging.info('new user subscribed')
+    chat_id_to_add = update.message.chat_id
+    if chat_id_to_add not in chat_ids:
+        chat_ids.append(chat_id_to_add)
+        context.bot.send_message(chat_id=update.message.chat_id,
+                                 text="Sie haben jetzt die Akutmeldungen der Mitteldeutschen Regiobahn abonniert.")
+        context.bot.send_message(chat_id=update.message.chat_id,
+                                 text="Sie können das Abonnement jederzeit mit /stop beenden.")
+        logging.info('new user succesfully subscribed')
+    else:
+        context.bot.send_message(chat_id=update.message.chat_id,
+                                 text="Sie haben die Akutmeldungen der Mitteldeutschen Regiobahn bereits abonniert.")
+        context.bot.send_message(chat_id=update.message.chat_id,
+                                 text="Sie können das Abonnement jederzeit mit /stop beenden.")
 
 
 def stop(update, context):
-    context.bot.send_message(chat_id=update.message.chat_id,
+    chat_id_to_remove = update.message.chat_id
+    if chat_id_to_remove not in chat_ids:
+        context.bot.send_message(chat_id=update.message.chat_id,
+                             text="Sie haben die Meldungen bereits deabonniert.")
+    else:
+        chat_ids.remove(update.message.chat_id)
+        context.bot.send_message(chat_id=update.message.chat_id,
                              text="Sie haben alle Meldungen deabonniert.")
-    chat_ids.remove(update.message.chat_id)
-    logging.info('user unsubscribed')
+        logging.info('user succesfully unsubscribed')
 
 
 def unknown_command(update, context):
