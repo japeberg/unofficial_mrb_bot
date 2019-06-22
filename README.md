@@ -12,6 +12,17 @@ Der Bot kann über diesen Link abonniert werden: https://telegram.me/unofficial_
 
 Mit `/start` kann der Bot abonniert werden und mit `/stop` kann das Abonnement beendet werden.
 
+## ToDo
+
+- [x] grundlegends Logging implementieren
+- [x] Zugausfälle und Zugverspätungen erfassen
+- [x] Bot abonnierbar machen
+- [x] Persistenz für Abonnements einrichten
+- [x] gleichzeitige Nachrichten zusammenfassen
+- [ ] Persistenz auf SQLite umstellen
+- [ ] Abonnements für einzelne Linien ermöglichen
+- [ ] Monatliche Reports erstellen
+
 ## Datenschutz
 
 Der Bot speichert für die Zeitdauer des Abonnements die `chat_id` des Abonnements, aber keine anderen persönlichen Informationen.
