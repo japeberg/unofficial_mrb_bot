@@ -36,6 +36,9 @@ def get_urgent_messages():
                 unsent_messages.append(message_to_send)
                 sent_messages.append(message_to_send)
     pickle.dump(sent_messages, open(config.MESSAGES_PICKLE_FILEPATH, "wb"))
+
+    ## ugly hack to get thread safety
+    pickle.dump(chat_ids, open(config.CHAT_IDS_PICKLE_FILEPATH, "wb"))
     return unsent_messages
 
 
@@ -53,14 +56,12 @@ def start(update, context):
     context.bot.send_message(chat_id=update.message.chat_id,
                              text="Sie können das Abonnement jederzeit mit /stop beenden.")
     chat_ids.append(update.message.chat_id)
-    pickle.dump(chat_ids, open(config.CHAT_IDS_PICKLE_FILEPATH, "wb"))
 
 
 def stop(update, context):
     context.bot.send_message(chat_id=update.message.chat_id,
                              text="Sie haben alle Meldungen deabonniert.")
     chat_ids.remove(update.message.chat_id)
-    pickle.dump(chat_ids, open(config.CHAT_IDS_PICKLE_FILEPATH, "wb"))
 
 
 def unknown_command(update, context):
