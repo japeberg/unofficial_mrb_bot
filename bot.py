@@ -62,12 +62,14 @@ def start(update, context):
     context.bot.send_message(chat_id=update.message.chat_id,
                              text="Sie können das Abonnement jederzeit mit /stop beenden.")
     chat_ids.append(update.message.chat_id)
+    logging.info('new user subscribed')
 
 
 def stop(update, context):
     context.bot.send_message(chat_id=update.message.chat_id,
                              text="Sie haben alle Meldungen deabonniert.")
     chat_ids.remove(update.message.chat_id)
+    logging.info('user unsubscribed')
 
 
 def unknown_command(update, context):
