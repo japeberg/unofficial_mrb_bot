@@ -14,6 +14,6 @@ Mit `/start` kann der Bot abonniert werden und mit `/stop` kann das Abonnement b
 
 ## Datenschutz
 
-Der Bot speichert für die Zeitdauer des Abonnements die `chat_id` des Nutzers, aber keine anderen persönlichen Informationen.
+Der Bot speichert für die Zeitdauer des Abonnements die `chat_id` des Abonnements, aber keine anderen persönlichen Informationen.
 
 Nachrichten an den Bot, die nicht zu den definierten Kommandos gehören, werden ohne Angabe des Senders in der Log gespeichert. Dies dient der Fehlerbehebung.
