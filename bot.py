@@ -95,17 +95,20 @@ def unknown_rest(update, context):
     logging.info(' UNKNOWN COMMAND FROM USER: "' + update.message.text + '"')
 
 
-def save_everything(signum = None, frame = None):
+def save_everything(signum=None, frame=None):
     pickle.dump(chat_ids, open(config.CHAT_IDS_PICKLE_FILEPATH, "wb"))
     pickle.dump(sent_messages, open(config.MESSAGES_PICKLE_FILEPATH, "wb"))
+    logging.info('shutdown by SIGNAL ' + str(signum))
     sys.exit(1)
 
+
+logging.basicConfig(filename=config.LOGS_FILEPATH, level=logging.INFO,
+                    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logging.info('started bot')
 
 signal.signal(signal.SIGTERM, save_everything)
 signal.signal(signal.SIGINT, save_everything)
 
-logging.basicConfig(filename=config.LOGS_FILEPATH, level=logging.INFO,
-                    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
 try:
     sent_messages = pickle.load(open(config.MESSAGES_PICKLE_FILEPATH, "rb"))
@@ -126,7 +129,6 @@ dispatcher.add_handler(start_handler)
 
 stop_handler = CommandHandler('stop', stop)
 dispatcher.add_handler(stop_handler)
-
 
 
 unknown_command_handler = MessageHandler(Filters.command, unknown_command)
