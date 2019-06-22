@@ -7,6 +7,8 @@ import telegram
 from telegram.ext import Updater, MessageHandler, Filters, CommandHandler
 import logging
 import config
+import signal
+import sys
 
 
 def get_urgent_messages():
@@ -91,6 +93,16 @@ def unknown_command(update, context):
 def unknown_rest(update, context):
     context.bot.send_message(chat_id=update.message.chat_id, text="Ich kann diese Nachricht nicht verstehen. Sie können den Dienst mit /start starten und mit /stop beenden.")
     logging.info(' UNKNOWN COMMAND FROM USER: "' + update.message.text + '"')
+
+
+def save_everything(signum = None, frame = None):
+    pickle.dump(chat_ids, open(config.CHAT_IDS_PICKLE_FILEPATH, "wb"))
+    pickle.dump(sent_messages, open(config.MESSAGES_PICKLE_FILEPATH, "wb"))
+    sys.exit(1)
+
+
+signal.signal(signal.SIGTERM, save_everything)
+signal.signal(signal.SIGINT, save_everything)
 
 logging.basicConfig(filename=config.LOGS_FILEPATH, level=logging.INFO,
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
