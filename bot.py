@@ -9,6 +9,7 @@ import logging
 import config
 import signal
 import sys
+import sqlite3
 
 
 def get_urgent_messages():
@@ -43,10 +44,11 @@ def get_urgent_messages():
             if message_to_send not in sent_messages:
                 unsent_messages.append(message_to_send)
                 sent_messages.append(message_to_send)
-    pickle.dump(sent_messages, open(config.MESSAGES_PICKLE_FILEPATH, "wb"))
 
-    ## ugly hack to get thread safety
-    pickle.dump(chat_ids, open(config.CHAT_IDS_PICKLE_FILEPATH, "wb"))
+    db_conn = sqlite3.connect(config.SQLITE_DB)
+    save_sent_messages_to_table(sent_messages, db_conn)
+    save_ids_to_table(chat_ids, db_conn)
+    db_conn.close()
     return unsent_messages
 
 
@@ -95,31 +97,93 @@ def unknown_rest(update, context):
     logging.info(' UNKNOWN COMMAND FROM USER: "' + update.message.text + '"')
 
 
-def save_everything(signum=None, frame=None):
-    pickle.dump(chat_ids, open(config.CHAT_IDS_PICKLE_FILEPATH, "wb"))
-    pickle.dump(sent_messages, open(config.MESSAGES_PICKLE_FILEPATH, "wb"))
+def save_on_shutdown(signum=None, frame=None):
+    db_conn = sqlite3.connect(config.SQLITE_DB)
+    save_ids_to_table(chat_ids, db_connection)
+    save_sent_messages_to_table(sent_messages, db_connection)
     logging.info('shutdown by SIGNAL ' + str(signum))
+    db_conn.close()
     sys.exit(1)
+
+def create_table(tablename, db_connection):
+    # TODO: Get table names and descriptions from constants or something
+    cursor = db_connection.cursor()
+    if (tablename == 'chat_ids'):
+        cursor.execute("CREATE TABLE {0} (chat_ids text)".format(tablename))
+    if (tablename == 'sent_messages'):
+        cursor.execute("CREATE TABLE {0} (messages text)".format(tablename))
+
+    db_connection.commit();
+
+def save_ids_to_table(chat_ids, db_connection):
+    cursor = db_connection.cursor()
+
+    # TODO: Get table names and descriptions from constants or something
+    # TODO: Remove all / Insert all == most efficient approach?
+    cursor.execute('DELETE FROM chat_ids')
+    for id in chat_ids:
+        cursor.execute('INSERT INTO chat_ids VALUES (?)', (id,))
+
+    db_connection.commit()
+
+def save_sent_messages_to_table(sent_messages, db_connection):
+    cursor = db_connection.cursor()
+    # TODO: Get table names and descriptions from constants or something
+    # TODO: Remove all / Insert all == most efficient approach?
+    cursor.execute('DELETE FROM sent_messages')
+    for message in sent_messages:
+        cursor.execute('INSERT INTO sent_messages VALUES (?)', (message,))
+
+
+    db_connection.commit()
+
+def init_db_if_new(db_connection):
+    # TODO: Get table names and descriptions from constants or something
+    cursor = db_connection.cursor()
+    table_names = [('chat_ids'),('sent_messages')]
+    string = 'SELECT name FROM sqlite_master WHERE type="table" AND name IN ' + ','.join('?'*len(table_names))
+    result = cursor.execute('SELECT name FROM sqlite_master WHERE type="table" AND name IN ('
+                            + ','.join('?'*len(table_names))
+                            + ')', table_names)
+    existing_tables = []
+    for row in result:
+        existing_tables.append(row[0])
+
+    for table_name in table_names:
+        if(table_name not in existing_tables):
+            create_table(table_name, db_connection)
 
 
 logging.basicConfig(filename=config.LOGS_FILEPATH, level=logging.INFO,
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logging.info('started bot')
 
-signal.signal(signal.SIGTERM, save_everything)
-signal.signal(signal.SIGINT, save_everything)
+db_conn = sqlite3.connect(config.SQLITE_DB)
+init_db_if_new(db_conn)
+db_cursor = db_conn.cursor()
 
+signal.signal(signal.SIGTERM, save_on_shutdown)
+signal.signal(signal.SIGINT, save_on_shutdown)
 
+sent_messages = list()
 try:
-    sent_messages = pickle.load(open(config.MESSAGES_PICKLE_FILEPATH, "rb"))
-except FileNotFoundError:
-    sent_messages = list()
+    # TODO: Get table names and descriptions from constants or something
+    message_entries = db_cursor.execute('SELECT messages FROM sent_messages').fetchall()
+    for entry in message_entries:
+        sent_messages.append(entry[0])
+except sqlite3.Error: # TODO: Lazy!
+    logging.error("Error fetching sent_messages")
 
+chat_ids = list()
 try:
-    chat_ids = pickle.load(open(config.CHAT_IDS_PICKLE_FILEPATH, "rb"))
-except FileNotFoundError:
-    chat_ids = list()
+    # TODO: Get table names and descriptions from constants or something
+    chat_id_entries = db_cursor.execute('SELECT chat_ids FROM chat_ids').fetchall()
+    for entry in chat_id_entries:
+        chat_ids.append(entry[0])
+except sqlite3.Error: # TODO: Lazy!
+    logging.error("Error fetching chat_ids")
 
+db_conn.close()
 
 updater = Updater(config.TELEGRAM_BOT_TOKEN, use_context=True)
 dispatcher = updater.dispatcher
