@@ -2,7 +2,6 @@
 
 from lxml import html
 import requests
-import pickle
 import telegram
 from telegram.ext import Updater, MessageHandler, Filters, CommandHandler
 import logging
@@ -44,26 +43,26 @@ def get_urgent_messages():
             if message_to_send not in sent_messages:
                 unsent_messages.append(message_to_send)
                 sent_messages.append(message_to_send)
-
-    db_conn = sqlite3.connect(config.SQLITE_DB)
-    save_sent_messages_to_table(sent_messages, db_conn)
-    save_ids_to_table(chat_ids, db_conn)
-    db_conn.close()
     return unsent_messages
 
 
 def callback_minute(context: telegram.ext.CallbackContext):
     urgent_messages = get_urgent_messages()
+    db_conn = sqlite3.connect(config.SQLITE_DB)
     if len(urgent_messages) != 0:
         for chat_id in chat_ids:
             message_to_send = "\n".join(urgent_messages)
             context.bot.send_message(chat_id=chat_id, text=message_to_send)
+            save_sent_message_to_table(message_to_send, db_conn)
 
+    db_conn.close()
 
 def start(update, context):
+    db_conn = sqlite3.connect(config.SQLITE_DB)
     chat_id_to_add = update.message.chat_id
     if chat_id_to_add not in chat_ids:
         chat_ids.append(chat_id_to_add)
+        save_id_to_table(chat_id_to_add, db_conn)
         context.bot.send_message(chat_id=update.message.chat_id,
                                  text="Sie haben jetzt die Akutmeldungen der Mitteldeutschen Regiobahn abonniert.")
         context.bot.send_message(chat_id=update.message.chat_id,
@@ -75,17 +74,23 @@ def start(update, context):
         context.bot.send_message(chat_id=update.message.chat_id,
                                  text="Sie können das Abonnement jederzeit mit /stop beenden.")
 
+    db_conn.close()
+
 
 def stop(update, context):
+    db_conn = sqlite3.connect(config.SQLITE_DB)
     chat_id_to_remove = update.message.chat_id
     if chat_id_to_remove not in chat_ids:
         context.bot.send_message(chat_id=update.message.chat_id,
                              text="Sie haben die Meldungen bereits deabonniert.")
     else:
         chat_ids.remove(update.message.chat_id)
+        delete_id_from_table(update.message.chat_id, db_conn)
         context.bot.send_message(chat_id=update.message.chat_id,
                              text="Sie haben alle Meldungen deabonniert.")
         logging.info('user succesfully unsubscribed')
+
+    db_conn.close()
 
 
 def unknown_command(update, context):
@@ -97,12 +102,8 @@ def unknown_rest(update, context):
     logging.info(' UNKNOWN COMMAND FROM USER: "' + update.message.text + '"')
 
 
-def save_on_shutdown(signum=None, frame=None):
-    db_conn = sqlite3.connect(config.SQLITE_DB)
-    save_ids_to_table(chat_ids, db_connection)
-    save_sent_messages_to_table(sent_messages, db_connection)
+def handle_shutdown(signum=None, frame=None):
     logging.info('shutdown by SIGNAL ' + str(signum))
-    db_conn.close()
     sys.exit(1)
 
 def create_table(tablename, db_connection):
@@ -115,24 +116,31 @@ def create_table(tablename, db_connection):
 
     db_connection.commit();
 
-def save_ids_to_table(chat_ids, db_connection):
+def save_id_to_table(chat_id, db_connection):
     cursor = db_connection.cursor()
 
     # TODO: Get table names and descriptions from constants or something
     # TODO: Remove all / Insert all == most efficient approach?
-    cursor.execute('DELETE FROM chat_ids')
-    for id in chat_ids:
-        cursor.execute('INSERT INTO chat_ids VALUES (?)', (id,))
+    existing_ids = cursor.execute('SELECT chat_ids FROM chat_ids WHERE chat_ids=?', (chat_id,)).fetchall()
+    if len(existing_ids) == 0:
+        cursor.execute('INSERT INTO chat_ids VALUES (?)', (chat_id,))
 
     db_connection.commit()
 
-def save_sent_messages_to_table(sent_messages, db_connection):
+def delete_id_from_table(chat_id, db_connection):
+    cursor = db_connection.cursor()
+
+    # TODO: Get table names and descriptions from constants or something
+    # TODO: Remove all / Insert all == most efficient approach?
+    cursor.execute('DELETE FROM chat_ids WHERE chat_ids=?', (chat_id,))
+
+    db_connection.commit()
+
+def save_sent_message_to_table(sent_message, db_connection):
     cursor = db_connection.cursor()
     # TODO: Get table names and descriptions from constants or something
     # TODO: Remove all / Insert all == most efficient approach?
-    cursor.execute('DELETE FROM sent_messages')
-    for message in sent_messages:
-        cursor.execute('INSERT INTO sent_messages VALUES (?)', (message,))
+    cursor.execute('INSERT INTO sent_messages VALUES (?)', (sent_message,))
 
 
     db_connection.commit()
@@ -162,8 +170,8 @@ db_conn = sqlite3.connect(config.SQLITE_DB)
 init_db_if_new(db_conn)
 db_cursor = db_conn.cursor()
 
-signal.signal(signal.SIGTERM, save_on_shutdown)
-signal.signal(signal.SIGINT, save_on_shutdown)
+signal.signal(signal.SIGTERM, handle_shutdown)
+signal.signal(signal.SIGINT, handle_shutdown)
 
 sent_messages = list()
 try:
