@@ -8,6 +8,6 @@ class MRBMessage(typ.NamedTuple):
     title: str
     message: str
     reason: str
-    alternative: str
+    alternatives: str
     line_id: int
     timestamp: datetime
