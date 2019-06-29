@@ -19,9 +19,13 @@ Mit `/start` kann der Bot abonniert werden und mit `/stop` kann das Abonnement b
 - [x] Bot abonnierbar machen
 - [x] Persistenz für Abonnements einrichten
 - [x] gleichzeitige Nachrichten zusammenfassen
-- [ ] Persistenz auf SQLite umstellen
+- [x] Persistenz auf SQLite umstellen
 - [ ] Abonnements für einzelne Linien ermöglichen
 - [ ] Monatliche Reports erstellen
+
+## Software Architektur
+
+![alt text](bot_software_architecture.jpg "Konzept der Software Architektur")
 
 ## Datenschutz
 
