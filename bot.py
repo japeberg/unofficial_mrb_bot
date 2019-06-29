@@ -3,13 +3,47 @@
 from lxml import html
 import requests
 import telegram
-from telegram.ext import Updater, MessageHandler, Filters, CommandHandler
+from telegram import  InlineKeyboardMarkup, KeyboardButton, InlineKeyboardButton
+from telegram.ext import Updater, MessageHandler, Filters, CommandHandler, CallbackQueryHandler
 import logging
 import config
 import signal
 import sys
 import sqlite3
+import data_structures
+from datetime import datetime
 
+data_structures.Session
+
+# def build_menu(buttons,
+#                n_cols,
+#                header_buttons=None,
+#                footer_buttons=None):
+#     menu = [buttons[i:i + n_cols] for i in range(0, len(buttons), n_cols)]
+#     if header_buttons:
+#         menu.insert(0, [header_buttons])
+#     if footer_buttons:
+#         menu.append([footer_buttons])
+#     return menu
+#
+#
+# def button(update, context):
+#     query = update.callback_query
+#
+#     query.edit_message_text(text="Selected option: {}".format(query.data))
+#
+# def menu(update, context):
+#     # button_list = [
+#     #     InlineKeyboardButton("RE6", callback_data="RE6"),
+#     #     InlineKeyboardButton("RB30", callback_data="RB30"),
+#     #     InlineKeyboardButton("RB 110", callback_data="RB 110")
+#     # ]
+#     dict_of_buttons = {"test": "test_test",
+#                        "test2": "test_test_test"}
+#     some_strings = ["col1", "col2", "row2"]
+#     button_list = [[KeyboardButton(s)] for s in dict_of_buttons]
+#     reply_markup = InlineKeyboardMarkup(build_menu(button_list, n_cols=2))
+#     context.bot.send_message(update.message.chat_id, "Welche Linie wollen sie abonnieren?", reply_markup=reply_markup)
 
 def get_urgent_messages():
     urls_to_parse = {
@@ -46,6 +80,8 @@ def get_urgent_messages():
     return unsent_messages
 
 
+
+
 def callback_minute(context: telegram.ext.CallbackContext):
     urgent_messages = get_urgent_messages()
     db_conn = sqlite3.connect(config.SQLITE_DB)
@@ -58,23 +94,27 @@ def callback_minute(context: telegram.ext.CallbackContext):
     db_conn.close()
 
 def start(update, context):
-    db_conn = sqlite3.connect(config.SQLITE_DB)
+    session = data_structures.Session()
     chat_id_to_add = update.message.chat_id
-    if chat_id_to_add not in chat_ids:
-        chat_ids.append(chat_id_to_add)
-        save_id_to_table(chat_id_to_add, db_conn)
-        context.bot.send_message(chat_id=update.message.chat_id,
-                                 text="Sie haben jetzt die Akutmeldungen der Mitteldeutschen Regiobahn abonniert.")
-        context.bot.send_message(chat_id=update.message.chat_id,
-                                 text="Sie können das Abonnement jederzeit mit /stop beenden.")
-        logging.info('new user succesfully subscribed')
-    else:
-        context.bot.send_message(chat_id=update.message.chat_id,
-                                 text="Sie haben die Akutmeldungen der Mitteldeutschen Regiobahn bereits abonniert.")
-        context.bot.send_message(chat_id=update.message.chat_id,
-                                 text="Sie können das Abonnement jederzeit mit /stop beenden.")
+    # if chat_id_to_add not in chat_ids:
+    #     chat_ids.append(chat_id_to_add)
+    #     save_id_to_table(chat_id_to_add, db_conn)
+    #     context.bot.send_message(chat_id=update.message.chat_id,
+    #                              text="Sie haben jetzt die Akutmeldungen der Mitteldeutschen Regiobahn abonniert.")
+    #     context.bot.send_message(chat_id=update.message.chat_id,
+    #                              text="Sie können das Abonnement jederzeit mit /stop beenden.")
+    #     logging.info('new user succesfully subscribed')
+    # else:
+    #     context.bot.send_message(chat_id=update.message.chat_id,
+    #                              text="Sie haben die Akutmeldungen der Mitteldeutschen Regiobahn bereits abonniert.")
+    #     context.bot.send_message(chat_id=update.message.chat_id,
+    #                              text="Sie können das Abonnement jederzeit mit /stop beenden.")
+    new_subscriber = data_structures.subscriber(chat_id=chat_id_to_add, subscribed_on=datetime.now())
+    session.add(new_subscriber)
+    print(chat_id_to_add)
+    session.commit()
 
-    db_conn.close()
+
 
 
 def stop(update, context):
@@ -193,14 +233,20 @@ except sqlite3.Error: # TODO: Lazy!
 
 db_conn.close()
 
+
 updater = Updater(config.TELEGRAM_BOT_TOKEN, use_context=True)
 dispatcher = updater.dispatcher
+# updater.dispatcher.add_handler(CallbackQueryHandler(button))
 
 start_handler = CommandHandler('start', start)
 dispatcher.add_handler(start_handler)
 
 stop_handler = CommandHandler('stop', stop)
 dispatcher.add_handler(stop_handler)
+
+# menu_handler = CommandHandler('menu', menu)
+# dispatcher.add_handler(menu_handler)
+#
 
 
 unknown_command_handler = MessageHandler(Filters.command, unknown_command)
