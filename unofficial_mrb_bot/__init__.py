@@ -13,7 +13,7 @@ import sqlite3
 from unofficial_mrb_bot import models
 from datetime import datetime
 
-data_structures.Session
+models.Session
 
 # def build_menu(buttons,
 #                n_cols,
@@ -94,7 +94,7 @@ def callback_minute(context: telegram.ext.CallbackContext):
     db_conn.close()
 
 def start(update, context):
-    session = data_structures.Session()
+    session = models.Session()
     chat_id_to_add = update.message.chat_id
     # if chat_id_to_add not in chat_ids:
     #     chat_ids.append(chat_id_to_add)
@@ -109,7 +109,7 @@ def start(update, context):
     #                              text="Sie haben die Akutmeldungen der Mitteldeutschen Regiobahn bereits abonniert.")
     #     context.bot.send_message(chat_id=update.message.chat_id,
     #                              text="Sie können das Abonnement jederzeit mit /stop beenden.")
-    new_subscriber = data_structures.subscriber(chat_id=chat_id_to_add, subscribed_on=datetime.now())
+    new_subscriber = models.subscriber(chat_id=chat_id_to_add, subscribed_on=datetime.now())
     session.add(new_subscriber)
     print(chat_id_to_add)
     session.commit()
