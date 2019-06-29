@@ -1,7 +1,7 @@
 # data_fetcher.py
 
 from interface import implements, Interface
-from mrb_message import MRBMessage
+from unofficial_mrb_bot.mrb_message import MRBMessage
 import requests
 from lxml import html
 from datetime import datetime

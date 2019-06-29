@@ -1,4 +1,4 @@
-# scrapper.py
+# data.py
 
 from lxml import html
 import requests
@@ -6,11 +6,11 @@ import telegram
 from telegram import  InlineKeyboardMarkup, KeyboardButton, InlineKeyboardButton
 from telegram.ext import Updater, MessageHandler, Filters, CommandHandler, CallbackQueryHandler
 import logging
-import config
+from unofficial_mrb_bot import config
 import signal
 import sys
 import sqlite3
-import data_structures
+from unofficial_mrb_bot import models
 from datetime import datetime
 
 data_structures.Session
