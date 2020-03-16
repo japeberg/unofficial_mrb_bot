@@ -37,7 +37,7 @@ class DataFetcher(implements(IDataFetcher)):
         self.url = url
         urgent_messages_as_xml = self.get_urgent_messages_as_xml()
         for idx in range(0, len(urgent_messages_as_xml)):
-            message = self.urgent_messages_as_xml[idx].xpath('p/text()')
+            message = urgent_messages_as_xml[idx].xpath('p/text()')
             title = str(message[0])
             message = str(message[1])
             try:
@@ -56,4 +56,4 @@ class DataFetcher(implements(IDataFetcher)):
                                                     line_id=self.line_id))
         return self.list_of_messages
 
-# a = DataFetcher().get_messages(url="https://www.mitteldeutsche-regiobahn.de/de/strecken/linienuebersicht-fahrplaene/linie/re-6-leipzig-chemnitz", line_id=1, line_name="RE 6")
+a = DataFetcher().get_messages(url="https://www.mitteldeutsche-regiobahn.de/de/strecken/linienuebersicht-fahrplaene/linie/re-6-leipzig-chemnitz", line_id=123, line_name="RE 6")
